@@ -1,17 +1,13 @@
 {
-  "name": "maxworld-browser-game",
-  "version": "1.1.0",
+  "name": "maxworld-render-fix",
+  "version": "1.0.1",
   "private": true,
-  "description": "MAXWORLD multiplayer browser game for Render",
-  "main": "server.js",
+  "description": "MAXWORLD browser game served on Render",
+  "type": "commonjs",
   "scripts": {
     "start": "node server.js"
   },
   "engines": {
     "node": ">=18"
-  },
-  "dependencies": {
-    "express": "^4.21.2",
-    "pg": "^8.13.1"
   }
 }
