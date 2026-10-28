@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>MAXWORLD — розробник Макс</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#8bd6ff;font-family:system-ui,-apple-system,Segoe UI,Arial;color:#fff}canvas{display:block}
+#top{position:fixed;top:12px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;text-shadow:0 3px 5px #123b5c;white-space:nowrap}
+#logo{font-size:clamp(25px,5vw,48px);font-weight:1000;letter-spacing:2px;color:#fff;-webkit-text-stroke:1.5px #16416c;text-shadow:0 5px 0 #0874cb,0 8px 14px #14395b}
+#by{font-weight:800;font-size:clamp(11px,2vw,16px)}
+#stats{position:fixed;right:12px;top:12px;background:#092747d9;border:1px solid #ffffff77;border-radius:14px;padding:10px 14px;font-weight:900}
+#tip{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);background:#092747d9;border:1px solid #ffffff77;border-radius:12px;padding:9px 13px;text-align:center;font-size:12px;white-space:nowrap}
+#menu{position:fixed;inset:0;background:#05213a66;display:flex;align-items:center;justify-content:center}
+.card{width:min(430px,91vw);padding:24px;border-radius:24px;border:2px solid #9de7ff;background:linear-gradient(145deg,#0b4778f5,#061a35f5);text-align:center;box-shadow:0 20px 70px #00233d99}
+.card h1{margin:0;font-size:42px;color:#2ac5ff;text-shadow:3px 4px #08284a}.card p{line-height:1.5;color:#e4f7ff}
+button{border:0;border-radius:13px;padding:13px 20px;font-size:16px;font-weight:900;cursor:pointer;color:#fff;background:#11c85b;box-shadow:0 5px 0 #078a40}
+#touch{display:none;position:fixed;bottom:65px;left:0;right:0;justify-content:space-between;padding:0 20px;pointer-events:none}
+.pad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,46px);gap:5px;pointer-events:auto}
+.pad button,.jump{background:#123c65c9;border:1px solid #c8efff99;box-shadow:none;padding:0;font-size:20px;touch-action:none}
+.pad .up{grid-column:2}.pad .left{grid-column:1;grid-row:2}.pad .down{grid-column:2;grid-row:2}.pad .right{grid-column:3;grid-row:2}
+.jump{width:66px;height:66px;border-radius:50%;align-self:end}
+@media(pointer:coarse){#touch{display:flex}#tip{bottom:8px;font-size:10px}#top{top:8px}}
+</style>
+</head>
+<body>
+<div id="top"><div id="logo">MAXWORLD</div><div id="by">ВІДКРИТИЙ СВІТ · РОЗРОБНИК МАКС</div></div>
+<div id="stats">🪙 <span id="coins">0</span> &nbsp; 🌍 Досліджуй світ</div>
+<div id="tip">WASD / стрілки — рух · ПРОБІЛ — стрибок · миша — огляд</div>
+<div id="menu"><div class="card"><h1>MAXWORLD</h1><p>Ласкаво просимо у світ Макса!<br>Досліджуй острів, стрибай, збирай монети й відкривай нові місця.</p><p>🏝️ Великий 3D-світ<br>🧍 Камера від третьої особи<br>🎮 Клавіатура та сенсорне керування</p><button id="play">ГРАТИ</button><p style="font-size:12px;opacity:.75">Прототип v0.2 · Онлайн буде додано пізніше</p></div></div>
+<div id="touch"><div class="pad"><button class="up" data-key="ArrowUp">▲</button><button class="left" data-key="ArrowLeft">◀</button><button class="down" data-key="ArrowDown">▼</button><button class="right" data-key="ArrowRight">▶</button></div><button class="jump" data-key="Space">⬆</button></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(()=>{
+if(!window.THREE){document.querySelector('.card p').innerHTML='Для 3D-гри потрібен інтернет, щоб завантажити графічну бібліотеку. Перезавантаж сторінку з підключенням до мережі.';return}
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x86d4ff);scene.fog=new THREE.Fog(0x86d4ff,65,210);
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.1,500);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xdff6ff,0x538344,2.1));
+const sun=new THREE.DirectionalLight(0xfff3d1,2.2);sun.position.set(-35,65,25);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);scene.add(sun);
+const mat=(color,roughness=1)=>new THREE.MeshStandardMaterial({color,roughness});
+const grass=mat(0x64c84c),earth=mat(0x8b6440),trunk=mat(0x81502c),leaf=mat(0x2eaa48),leaf2=mat(0x55d94b),stone=mat(0x9aa8b5),road=mat(0xd7c18c),blue=mat(0x239ed4),gold=new THREE.MeshStandardMaterial({color:0xffd329,metalness:.65,roughness:.25}),white=mat(0xffffff),dark=mat(0x172538),skin=mat(0xd79a69),roof=mat(0xd94c42),windowMat=new THREE.MeshStandardMaterial({color:0x9ce8ff,metalness:.1,roughness:.2});
+function box(parent,x,y,z,w,h,d,material){let m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
+function cylinder(parent,x,y,z,r1,r2,h,material,segments=8){let m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,segments),material);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m}
+function sphere(parent,x,y,z,r,material,segments=12){let m=new THREE.Mesh(new THREE.SphereGeometry(r,segments,segments),material);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m}
+// Broad island and layered grassy terrain
+const ground=new THREE.Mesh(new THREE.CylinderGeometry(88,93,8,64),earth);ground.position.y=-4;ground.receiveShadow=true;scene.add(ground);
+const top=new THREE.Mesh(new THREE.CylinderGeometry(87,88,2.4,64),grass);top.position.y=.8;top.receiveShadow=true;scene.add(top);
+// outer ocean
+const ocean=new THREE.Mesh(new THREE.PlaneGeometry(1000,1000),blue);ocean.rotation.x=-Math.PI/2;ocean.position.y=-8;scene.add(ocean);
+// winding pale paths
+function path(points,radius){let curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));let mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,100,radius,8,false),road);mesh.position.y=2.02;mesh.receiveShadow=true;scene.add(mesh)}
+path([[-5,0,78],[0,0,54],[18,0,34],[10,0,14],[30,0,-5],[53,0,-25]],2.5);
+path([[-5,0,78],[-23,0,54],[-42,0,35],[-54,0,5]],2.1);
+// cliffs around island
+for(let i=0;i<22;i++){let a=i*Math.PI*2/22,r=85;let b=box(scene,Math.cos(a)*r,-3.4,Math.sin(a)*r,10,9,10, i%2?earth:stone);b.rotation.y=a}
+// trees
+function tree(x,z,s=1){let g=new THREE.Group();g.position.set(x,1.8,z);g.scale.setScalar(s);scene.add(g);cylinder(g,0,2.5,0,.65,.9,5,trunk);box(g,0,5.2,0,4.6,3.5,4.6,leaf);box(g,-.9,6.2,.1,2.5,2.2,2.5,leaf2);box(g,1,5.8,-.4,2.7,2.3,2.7,leaf);return g}
+for(let i=0;i<82;i++){let a=i*2.399,r=22+(i*37%59);let x=Math.cos(a)*r,z=Math.sin(a)*r;if(Math.hypot(x,z)>78)continue;if(Math.abs(z-40)<7&&x>-10&&x<25)continue;tree(x,z,.65+(i%5)*.12)}
+// small village
+for(let i=0;i<11;i++){let x=-48+(i%4)*11,z=-15+Math.floor(i/4)*12;let w=6+(i%3);box(scene,x,4,z,w,5,6, i%2?mat(0xf0c47a):mat(0xf1e5c8));let r=box(scene,x,7.2,z,w+1,1.7,7,roof);r.rotation.z=.08;box(scene,x-1.2,3.5,z+3.06,1.2,2.8,.15,windowMat);box(scene,x+1.3,3.5,z+3.06,1.2,2.8,.15,windowMat)}
+// tall watch tower
+for(let x of [-63,-56])for(let z of [-45,-38])box(scene,x,9,z,1.2,18,1.2,dark);
+box(scene,-59.5,18,-41.5,11,1.5,11,mat(0x355a75));box(scene,-59.5,23,-41.5,9,8,9,mat(0x4b8db3));box(scene,-59.5,28,-41.5,12,1.3,12,roof);
+// floating mini islands
+for(let i=0;i<5;i++){let x=-68+i*32,z=-75-(i%2)*12,y=20+(i%3)*5;let isl=new THREE.Mesh(new THREE.BoxGeometry(13,4,12),earth);isl.position.set(x,y,z);scene.add(isl);let turf=new THREE.Mesh(new THREE.BoxGeometry(13.4,1.1,12.4),grass);turf.position.set(x,y+2,z);scene.add(turf);tree(x,y?z:0,.48)}
+// avatar group
+const avatar=new THREE.Group();scene.add(avatar);
+box(avatar,0,1.65,0,1.25,1.55,.7,dark);box(avatar,-.82,1.65,0,.35,1.25,.4,dark);box(avatar,.82,1.65,0,.35,1.25,.4,dark);
+box(avatar,-.38,.55,0,.42,1.1,.48,mat(0x193653));box(avatar,.38,.55,0,.42,1.1,.48,mat(0x193653));box(avatar,-.38,.08,.13,.5,.22,.72,white);box(avatar,.38,.08,.13,.5,.22,.72,white);
+box(avatar,0,2.85,0,.9,.9,.8,skin);box(avatar,0,3.26,-.03,1,.28,.85,mat(0x513326));box(avatar,-.2,2.9,.414,.1,.1,.04,dark);box(avatar,.2,2.9,.414,.1,.1,.04,dark);
+// coins
+const coinMeshes=[];for(let i=0;i<55;i++){let a=i*2.399,r=12+(i*19%67),x=Math.cos(a)*r,z=Math.sin(a)*r;if(Math.hypot(x,z)>79)continue;let c=new THREE.Mesh(new THREE.TorusGeometry(.65,.19,8,16),gold);c.position.set(x,2.6+(i%3)*.5,z);c.castShadow=true;scene.add(c);coinMeshes.push({mesh:c,taken:false})}
+// rocks, flowers
+for(let i=0;i<75;i++){let a=i*4.1,r=10+(i*13%72),x=Math.cos(a)*r,z=Math.sin(a)*r;if(Math.hypot(x,z)>80)continue;let o=sphere(scene,x,2,z,.25+(i%3)*.12,i%2?mat(0xffe65c):mat(0xff83bd),7);o.scale.y=.55}
+const keys={};let playing=false,coins=0,vy=0,onGround=true,angle=0,camPitch=.25,frame=0;
+const playerPos=new THREE.Vector3(0,2,60);
+avatar.position.copy(playerPos);
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}addEventListener('resize',resize);
+addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault()});
+addEventListener('keyup',e=>keys[e.code]=false);
+let dragging=false,lastX=0,lastY=0;
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&playing){dragging=true;lastX=e.clientX;lastY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)}});
+renderer.domElement.addEventListener('pointermove',e=>{if(dragging){angle-=(e.clientX-lastX)*.006;camPitch=Math.max(-.1,Math.min(.75,camPitch+(e.clientY-lastY)*.003));lastX=e.clientX;lastY=e.clientY}});
+renderer.domElement.addEventListener('pointerup',()=>dragging=false);
+document.querySelectorAll('[data-key]').forEach(b=>{let k=b.dataset.key;const on=e=>{e.preventDefault();keys[k]=true},off=e=>{e.preventDefault();keys[k]=false};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('pointerleave',off)});
+document.getElementById('play').onclick=()=>{playing=true;document.getElementById('menu').style.display='none'};
+function animate(){requestAnimationFrame(animate);frame++;
+if(playing){
+ let f=0,s=0;if(keys.KeyW||keys.ArrowUp)f=1;if(keys.KeyS||keys.ArrowDown)f=-1;if(keys.KeyA||keys.ArrowLeft)s=-1;if(keys.KeyD||keys.ArrowRight)s=1;
+ const dir=new THREE.Vector3(Math.sin(angle),0,Math.cos(angle));const side=new THREE.Vector3(dir.z,0,-dir.x);let move=new THREE.Vector3().addScaledVector(dir,-f).addScaledVector(side,s);
+ if(move.lengthSq()>0){move.normalize();playerPos.addScaledVector(move,.22);avatar.rotation.y=Math.atan2(move.x,move.z)}
+ playerPos.x=Math.max(-80,Math.min(80,playerPos.x));playerPos.z=Math.max(-80,Math.min(80,playerPos.z));
+ if((keys.Space||keys.KeyJ)&&onGround){vy=.22;onGround=false}vy-=.012;playerPos.y+=vy;if(playerPos.y<2){playerPos.y=2;vy=0;onGround=true}
+ avatar.position.copy(playerPos);avatar.position.y+=Math.sin(frame*.13)*.025;
+ for(const c of coinMeshes){if(c.taken)continue;c.mesh.rotation.y+=.035;if(c.mesh.position.distanceTo(playerPos)<2.4){c.taken=true;scene.remove(c.mesh);coins++;document.getElementById('coins').textContent=coins}}
+}
+let target=new THREE.Vector3(playerPos.x,playerPos.y+1.8,playerPos.z);let distance=10;let camX=target.x+Math.sin(angle)*distance,camZ=target.z+Math.cos(angle)*distance;
+camera.position.lerp(new THREE.Vector3(camX,target.y+4+camPitch*5,camZ),.12);camera.lookAt(target);
+renderer.render(scene,camera)}
+animate();
+})();
+</script>
+</body></html>
