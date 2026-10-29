@@ -1,91 +1,52 @@
 'use strict';
-
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const { URL } = require('node:url');
-
 const PORT = Number(process.env.PORT) || 10000;
 const HOST = '0.0.0.0';
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const INDEX_FILE = path.join(PUBLIC_DIR, 'index.html');
-
-const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.webp': 'image/webp',
-  '.woff2': 'font/woff2'
-};
-
-function send(res, status, body, contentType = 'text/plain; charset=utf-8') {
-  res.writeHead(status, {
-    'Content-Type': contentType,
-    'Cache-Control': 'no-store',
-    'X-Content-Type-Options': 'nosniff'
-  });
-  res.end(body);
+const DATA_FILE = path.join(__dirname, 'data.json');
+const sessions = new Map();
+const collectCooldown = new Map();
+let pool = null;
+if (process.env.DATABASE_URL) {
+  try { const { Pool } = require('pg'); pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: process.env.PGSSL === 'false' ? false : { rejectUnauthorized: false }, max: 5 }); }
+  catch (e) { console.error('PostgreSQL driver unavailable:', e.message); }
 }
-
-const server = http.createServer((req, res) => {
-  let pathname;
-  try {
-    pathname = decodeURIComponent(new URL(req.url, `http://${req.headers.host || 'localhost'}`).pathname);
-  } catch {
-    return send(res, 400, 'Bad Request');
-  }
-
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    return send(res, 405, 'Method Not Allowed');
-  }
-
-  if (pathname === '/health' || pathname === '/healthz') {
-    return send(res, 200, JSON.stringify({ ok: true, service: 'MAXWORLD', port: PORT }), 'application/json; charset=utf-8');
-  }
-
-  // Always serve the game entry point at /, even when no route is specified.
-  if (pathname === '/' || pathname === '') {
-    if (!fs.existsSync(INDEX_FILE)) return send(res, 500, 'MAXWORLD entry file is missing: public/index.html');
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
-    if (req.method === 'HEAD') return res.end();
-    return fs.createReadStream(INDEX_FILE).pipe(res);
-  }
-
-  const relative = path.normalize(pathname).replace(/^([/\\]|\.\.(?:[/\\]|$))+/, '');
-  const filePath = path.resolve(PUBLIC_DIR, relative);
-  if (!filePath.startsWith(PUBLIC_DIR + path.sep) && filePath !== INDEX_FILE) {
-    return send(res, 403, 'Forbidden');
-  }
-
-  fs.stat(filePath, (err, stat) => {
-    if (err || !stat.isFile()) return send(res, 404, 'Not Found');
-    const type = MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream';
-    res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'public, max-age=300', 'X-Content-Type-Options': 'nosniff' });
-    if (req.method === 'HEAD') return res.end();
-    fs.createReadStream(filePath).pipe(res);
-  });
-});
-
-server.on('error', (err) => {
-  console.error('MAXWORLD server error:', err);
-  process.exitCode = 1;
-});
-
-server.listen(PORT, HOST, () => {
-  console.log(`MAXWORLD listening on ${HOST}:${PORT}`);
-  console.log('Database: memory fallback (persistent saves and multiplayer are not enabled in this package).');
-});
-
-function shutdown(signal) {
-  console.log(`${signal} received; shutting down MAXWORLD`);
-  server.close(() => process.exit(0));
-  setTimeout(() => process.exit(1), 10000).unref();
-}
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+const catalog = { 'Ліжко':25,'Диван':30,'Стіл':18,'Шафа':22,'Лампа':12,'Рослина':10,'Ліхтар':5,'Капелюх':8 };
+function json(res,status,obj){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Access-Control-Allow-Headers':'Content-Type, Authorization','Access-Control-Allow-Methods':'GET,POST,OPTIONS'});res.end(JSON.stringify(obj));}
+function readBody(req){return new Promise((resolve,reject)=>{let s='';req.on('data',c=>{s+=c;if(s.length>1e6)reject(new Error('Завеликий запит'));});req.on('end',()=>{try{resolve(s?JSON.parse(s):{});}catch{reject(new Error('Некоректний JSON'));}});});}
+function cleanEmail(s){return String(s||'').trim().toLowerCase();}
+function hashPassword(password,salt=crypto.randomBytes(16).toString('hex')){return {salt,hash:crypto.scryptSync(password,salt,64).toString('hex')};}
+function verifyPassword(password,user){try{return crypto.timingSafeEqual(Buffer.from(hashPassword(password,user.salt).hash,'hex'),Buffer.from(user.password_hash,'hex'));}catch{return false;}}
+function freshState(){return {coins:0,xp:0,level:1,profession:'Новачок',upgradeLevel:0,houseBuilt:false,houseX:5,houseZ:56,ownedItems:[],furniturePlaced:[],collectedCoins:[]};}
+function readFileData(){try{return JSON.parse(fs.readFileSync(DATA_FILE,'utf8'));}catch{return {users:[],states:{}};}}
+function writeFileData(data){const tmp=DATA_FILE+'.tmp';fs.writeFileSync(tmp,JSON.stringify(data));fs.renameSync(tmp,DATA_FILE);}
+async function init(){if(!pool)return;await pool.query(`CREATE TABLE IF NOT EXISTS mw_users(id BIGSERIAL PRIMARY KEY,name TEXT NOT NULL,email TEXT UNIQUE NOT NULL,password_hash TEXT NOT NULL,salt TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'player',created_at TIMESTAMPTZ NOT NULL DEFAULT now()); CREATE TABLE IF NOT EXISTS mw_game_state(user_id BIGINT PRIMARY KEY REFERENCES mw_users(id) ON DELETE CASCADE, state JSONB NOT NULL DEFAULT '{}'::jsonb, updated_at TIMESTAMPTZ NOT NULL DEFAULT now());`);}
+async function createUser(name,email,password,developerCode){const expected=String(process.env.DEVELOPER_CODE||''),provided=String(developerCode||'');const isDev=!!expected&&!!provided&&provided.length===expected.length&&crypto.timingSafeEqual(Buffer.from(provided),Buffer.from(expected));const pw=hashPassword(password);if(pool){const r=await pool.query('INSERT INTO mw_users(name,email,password_hash,salt,role) VALUES($1,$2,$3,$4,$5) RETURNING id,name,email,role',[name,email,pw.hash,pw.salt,isDev?'developer':'player']);const u=r.rows[0];await pool.query('INSERT INTO mw_game_state(user_id,state) VALUES($1,$2)',[u.id,freshState()]);return u;}const d=readFileData();if(d.users.some(u=>u.email===email))throw Object.assign(new Error('Ця пошта вже зареєстрована.'),{status:409});const u={id:crypto.randomUUID(),name,email,password_hash:pw.hash,salt:pw.salt,role:isDev?'developer':'player',created_at:new Date().toISOString()};d.users.push(u);d.states[u.id]=freshState();writeFileData(d);return {id:u.id,name,email,role:u.role};}
+async function findUser(email){if(pool){const r=await pool.query('SELECT id,name,email,password_hash,salt,role FROM mw_users WHERE email=$1',[email]);return r.rows[0]||null;}return readFileData().users.find(u=>u.email===email)||null;}
+async function getState(id){if(pool){const r=await pool.query('SELECT state FROM mw_game_state WHERE user_id=$1',[id]);return r.rows[0]?.state||freshState();}return readFileData().states[id]||freshState();}
+async function setState(id,state){if(pool){await pool.query('INSERT INTO mw_game_state(user_id,state,updated_at) VALUES($1,$2,now()) ON CONFLICT(user_id) DO UPDATE SET state=EXCLUDED.state,updated_at=now()',[id,state]);return;}const d=readFileData();d.states[id]=state;writeFileData(d);}
+function publicUser(u){return {id:u.id,name:u.name,email:u.email,role:u.role};}
+async function auth(req){const token=String(req.headers.authorization||'').replace(/^Bearer\s+/i,'');if(!token)return null;const id=sessions.get(token);if(!id)return null;const users=pool?(await pool.query('SELECT id,name,email,role FROM mw_users WHERE id=$1',[id])).rows:readFileData().users.filter(u=>String(u.id)===String(id)).map(publicUser);return users[0]||null;}
+function issueSession(user){const token=crypto.randomBytes(32).toString('hex');sessions.set(token,user.id);return token;}
+async function handle(req,res){if(req.method==='OPTIONS')return json(res,204,{});let u;try{u=new URL(req.url,`http://${req.headers.host||'localhost'}`);}catch{return json(res,400,{error:'Некоректна адреса'});}if(req.method==='GET'&&['/health','/healthz'].includes(u.pathname)){try{if(pool)await pool.query('SELECT 1');return json(res,200,{ok:true,service:'MAXWORLD',database:pool?'postgresql':'server-json-fallback',persistent:!!pool||true});}catch(e){return json(res,503,{ok:false,error:'База даних недоступна'});}}
+if(u.pathname.startsWith('/api/')){try{
+ if(req.method==='POST'&&u.pathname==='/api/register'){const b=await readBody(req),name=String(b.name||'').trim(),email=cleanEmail(b.email),password=String(b.password||'');if(name.length<2||name.length>24||!/^\S+@\S+\.\S+$/.test(email)||password.length<6||password.length>200)return json(res,400,{error:'Вкажи ім’я, правильну пошту та пароль від 6 символів.'});let user;try{user=await createUser(name,email,password,String(b.code||''));}catch(e){return json(res,e.status||409,{error:e.message||'Не вдалося створити акаунт.'});}const token=issueSession(user);return json(res,201,{user:publicUser(user),token,state:await getState(user.id)});}
+ if(req.method==='POST'&&u.pathname==='/api/login'){const b=await readBody(req),email=cleanEmail(b.email),password=String(b.password||'');const user=await findUser(email);if(!user||!verifyPassword(password,user))return json(res,401,{error:'Неправильна пошта або пароль.'});if(b.developerLogin&&user.role!=='developer')return json(res,403,{error:'Цей акаунт не має прав розробника.'});const token=issueSession(user);return json(res,200,{user:publicUser(user),token,state:await getState(user.id)});}
+ const user=await auth(req);if(!user)return json(res,401,{error:'Потрібно увійти в акаунт.'});
+ if(req.method==='GET'&&u.pathname==='/api/me')return json(res,200,{user,state:await getState(user.id)});
+ if(req.method==='POST'&&u.pathname==='/api/save'){const b=await readBody(req),old=await getState(user.id),s=b.state||{};const state={...old,coins:Math.max(0,Math.floor(Number(old.coins)||0)),xp:Math.max(0,Math.floor(Number(s.xp)||0)),level:Math.max(1,Math.floor(Number(s.level)||1)),profession:['Новачок','Будівельник','Торговець','Дизайнер'].includes(s.profession)?s.profession:'Новачок',upgradeLevel:Math.max(0,Math.min(3,Math.floor(Number(s.upgradeLevel)||0))),houseBuilt:!!s.houseBuilt,houseX:Number.isFinite(Number(s.houseX))?Math.max(-70,Math.min(70,Number(s.houseX))):5,houseZ:Number.isFinite(Number(s.houseZ))?Math.max(-70,Math.min(70,Number(s.houseZ))):56,ownedItems:Array.isArray(s.ownedItems)?s.ownedItems.filter(x=>typeof x==='string').slice(0,100):[],furniturePlaced:Array.isArray(s.furniturePlaced)?s.furniturePlaced.filter(x=>x&&typeof x.type==='string').slice(0,100):[],collectedCoins:Array.isArray(old.collectedCoins)?old.collectedCoins:[]};await setState(user.id,state);return json(res,200,{ok:true,state});}
+ if(req.method==='POST'&&u.pathname==='/api/collect'){const b=await readBody(req),coinId=String(b.coinId||'');if(!/^[0-9]{1,4}$/.test(coinId))return json(res,400,{error:'Некоректна монета'});const now=Date.now(),last=collectCooldown.get(String(user.id))||0;if(now-last<180)return json(res,429,{error:'Зачекай мить'});collectCooldown.set(String(user.id),now);const s=await getState(user.id);s.collectedCoins=Array.isArray(s.collectedCoins)?s.collectedCoins:[];if(s.collectedCoins.includes(coinId))return json(res,200,{ok:true,duplicate:true,state:s});s.collectedCoins.push(coinId);s.coins=(Number(s.coins)||0)+1;s.xp=(Number(s.xp)||0)+5;let reward=0;while(s.xp>=s.level*100){s.xp-=s.level*100;s.level++;s.coins+=10;reward+=10;}await setState(user.id,s);return json(res,200,{ok:true,state:s,reward});}
+ if(req.method==='POST'&&u.pathname==='/api/purchase'){const b=await readBody(req),item=String(b.item||''),cost=catalog[item];if(!cost)return json(res,400,{error:'Немає такого предмета в магазині.'});const s=await getState(user.id);if((Number(s.coins)||0)<cost)return json(res,400,{error:'Недостатньо монет.'});s.coins-=cost;s.ownedItems=Array.isArray(s.ownedItems)?s.ownedItems:[];s.ownedItems.push(item);await setState(user.id,s);return json(res,200,{ok:true,state:s,item,cost});}
+ if(req.method==='POST'&&u.pathname==='/api/admin/coins'){if(user.role!=='developer')return json(res,403,{error:'Недостатньо прав.'});const b=await readBody(req),target=String(b.userId||user.id),amount=Math.max(1,Math.min(10000,Math.floor(Number(b.amount)||100)));const s=await getState(target);s.coins=(Number(s.coins)||0)+amount;await setState(target,s);return json(res,200,{ok:true,state:s});}
+ if(req.method==='POST'&&u.pathname==='/api/logout'){for(const [t,id] of sessions)if(String(id)===String(user.id))sessions.delete(t);return json(res,200,{ok:true});}
+ return json(res,404,{error:'API маршрут не знайдено'});
+ }catch(e){console.error('API error:',e);return json(res,500,{error:'Помилка сервера. Перевір налаштування бази даних.'});}}
+if(req.method!=='GET'&&req.method!=='HEAD')return json(res,405,{error:'Method Not Allowed'});let pathname;try{pathname=decodeURIComponent(u.pathname);}catch{return json(res,400,{error:'Bad Request'});}const rel=path.normalize(pathname).replace(/^([/\\]|\.\.(?:[/\\]|$))+/,''),file=path.resolve(PUBLIC_DIR,rel||'index.html');if(!file.startsWith(PUBLIC_DIR+path.sep)&&file!==path.join(PUBLIC_DIR,'index.html'))return json(res,403,{error:'Forbidden'});fs.stat(file,(err,stat)=>{if(err||!stat.isFile())return json(res,404,{error:'Not Found'});const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.svg':'image/svg+xml','.json':'application/json; charset=utf-8'}[path.extname(file).toLowerCase()]||'application/octet-stream';res.writeHead(200,{'Content-Type':mime,'Cache-Control':file.endsWith('.html')?'no-cache':'public, max-age=300','X-Content-Type-Options':'nosniff'});if(req.method==='HEAD')return res.end();fs.createReadStream(file).pipe(res);});}
+const server=http.createServer((req,res)=>handle(req,res));
+server.on('error',e=>{console.error('MAXWORLD server error:',e);process.exitCode=1;});
+init().then(()=>server.listen(PORT,HOST,()=>console.log(`MAXWORLD listening on ${HOST}:${PORT}; database: ${pool?'PostgreSQL':'server JSON fallback'}`))).catch(e=>{console.error('Database initialization failed:',e);process.exit(1);});
+function shutdown(){server.close(()=>process.exit(0));}process.on('SIGTERM',shutdown);process.on('SIGINT',shutdown);
