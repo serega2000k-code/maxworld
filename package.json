@@ -1,8 +1,8 @@
 {
   "name": "maxworld-city-online",
-  "version": "1.4.0",
+  "version": "2.4.0",
   "private": true,
-  "description": "MAXWORLD browser game with server accounts, saved progression, coin collection and shop",
+  "description": "MAXWORLD modern city edition with central boulevard, skyline, shops, traffic, accounts and progression",
   "type": "commonjs",
   "scripts": {
     "start": "node server.js"
