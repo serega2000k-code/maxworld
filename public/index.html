@@ -70,6 +70,7 @@ button{border:0;border-radius:13px;padding:13px 20px;font-size:16px;font-weight:
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 (()=>{
+window.addEventListener('error',e=>{console.error('MAXWORLD runtime error:',e.error||e.message);let box=document.getElementById('runtimeError');if(!box){box=document.createElement('div');box.id='runtimeError';box.style.cssText='position:fixed;z-index:9999;left:10px;right:10px;bottom:10px;background:#7f1d1d;color:#fff;padding:12px;border-radius:10px;font:14px system-ui;max-height:35vh;overflow:auto';document.body.appendChild(box)}box.textContent='MAXWORLD: сталася помилка запуску. Перезавантаж сторінку. Деталі: '+(e.message||'невідома помилка');});
 if(!window.THREE){const p=document.querySelector('.card p');p.innerHTML='Не вдалося завантажити 3D-бібліотеку. Перевір інтернет і натисни «Перезавантажити».<br><button id="retry3d" style="margin-top:12px">Перезавантажити</button>';document.getElementById('retry3d').onclick=()=>location.reload();return}
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x9ccff0);scene.fog=new THREE.Fog(0x9ccff0,300,1150);
 const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,1500);
@@ -313,7 +314,8 @@ if(playing){
 let target=new THREE.Vector3(playerPos.x,playerPos.y+1.62,playerPos.z);let distance=7.6;let camX=target.x+Math.sin(angle)*distance,camZ=target.z+Math.cos(angle)*distance;
 camera.position.lerp(new THREE.Vector3(camX,target.y+2.8+camPitch*4,camZ),1-Math.exp(-11*dt));camera.lookAt(target);
 renderer.render(scene,camera)}
-animate();
+// Start only through requestAnimationFrame so the first frame receives a valid timestamp.
+requestAnimationFrame(animate);
 })();
 </script>
 </body></html>
