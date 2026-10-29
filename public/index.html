@@ -15,14 +15,11 @@
 .card{width:min(430px,91vw);padding:24px;border-radius:24px;border:2px solid #9de7ff;background:linear-gradient(145deg,#0b4778f5,#061a35f5);text-align:center;box-shadow:0 20px 70px #00233d99}
 .card h1{margin:0;font-size:42px;color:#2ac5ff;text-shadow:3px 4px #08284a}.card p{line-height:1.5;color:#e4f7ff}
 button{border:0;border-radius:13px;padding:13px 20px;font-size:16px;font-weight:900;cursor:pointer;color:#fff;background:#11c85b;box-shadow:0 5px 0 #078a40}
-#touch{display:none;position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:0;right:0;justify-content:space-between;align-items:flex-end;padding:0 18px;pointer-events:none;z-index:7;touch-action:none;user-select:none;-webkit-user-select:none}
-#joystick{width:124px;height:124px;border-radius:50%;border:2px solid #d9f4ff88;background:#09274755;box-shadow:inset 0 0 22px #00182c55;position:relative;pointer-events:auto;touch-action:none;flex-shrink:0}
-#stickKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px;border-radius:50%;background:linear-gradient(145deg,#c9f1ffcc,#245c8dcc);border:2px solid #effbffcc;box-shadow:0 3px 12px #00172c88;pointer-events:none}
-#mobileActions{display:flex;align-items:flex-end;gap:12px;pointer-events:auto}
-.mobileAction{width:64px;height:64px;border-radius:50%;padding:0;background:#092747b8;border:1px solid #d4f3ff99;box-shadow:0 4px 12px #00172c66;font-size:25px;touch-action:none}
-.mobileAction.secondary{width:52px;height:52px;font-size:21px;background:#12547bc9}
-.mobileAction:active{transform:scale(.94);background:#1676a9}
-
+#touch{display:none;position:fixed;bottom:65px;left:0;right:0;justify-content:space-between;padding:0 20px;pointer-events:none}
+.pad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,46px);gap:5px;pointer-events:auto}
+.pad button,.jump{background:#123c65c9;border:1px solid #c8efff99;box-shadow:none;padding:0;font-size:20px;touch-action:none}
+.pad .up{grid-column:2}.pad .left{grid-column:1;grid-row:2}.pad .down{grid-column:2;grid-row:2}.pad .right{grid-column:3;grid-row:2}
+.jump{width:66px;height:66px;border-radius:50%;align-self:end}
 
 #gamebar{position:fixed;left:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:4}
 #gamebar button{width:52px;height:48px;padding:4px;background:#092747e8;border:1px solid #a9e8ff88;box-shadow:0 4px 0 #04172a;font-size:21px}
@@ -33,17 +30,7 @@ button{border:0;border-radius:13px;padding:13px 20px;font-size:16px;font-weight:
 #playerMenu{position:fixed;display:none;z-index:10;min-width:190px;padding:10px;background:#092747f2;border:1px solid #9de7ff;border-radius:14px;box-shadow:0 10px 30px #001b33aa;color:#fff}
 #playerMenu strong{display:block;margin:3px 5px 8px;color:#70ddff}#playerMenu button{display:block;width:100%;text-align:left;margin:4px 0;padding:9px 10px;background:#15517b;box-shadow:none;font-size:13px}
 #toast{position:fixed;left:50%;bottom:65px;transform:translateX(-50%);z-index:20;background:#092747f2;border:1px solid #9de7ff;border-radius:12px;padding:10px 16px;display:none;max-width:90vw;text-align:center}
-@media(pointer:coarse){
- #touch{display:flex}#tip{display:none}#top{top:max(4px,env(safe-area-inset-top));left:10px;transform:none;text-align:left}#logo{font-size:clamp(17px,4vw,27px);letter-spacing:1px;-webkit-text-stroke:1px #16416c;text-shadow:0 3px 0 #0874cb,0 5px 9px #14395b}#by{font-size:9px}
- #stats{top:max(5px,env(safe-area-inset-top));right:7px;padding:6px 8px;border-radius:10px;font-size:10px;line-height:1.4;max-width:47vw}
- #gamebar{left:7px;top:50%;transform:translateY(-50%);gap:5px}#gamebar button{width:40px;height:39px;font-size:16px;border-radius:10px}#gamebar button small{font-size:8px}
- #panel{left:54px;top:8px;bottom:8px;transform:none;width:min(330px,calc(100vw - 64px));max-height:none;padding:14px;overscroll-behavior:contain}
- #toast{bottom:155px;font-size:12px}#accountChip{right:7px;bottom:7px;padding:5px 7px;font-size:10px;max-width:55vw}#accountChip button{padding:5px 7px;font-size:10px}
- .authCard{max-height:94dvh;overflow:auto;padding:17px}.authCard h1{font-size:28px}.authCard h2{font-size:19px}.authCard input{padding:11px;font-size:16px}.authHint{font-size:11px}
- .card{max-height:90dvh;overflow:auto;padding:18px}.card h1{font-size:34px}.card p{font-size:14px}
- #adminPanel{inset:2%;padding:12px;overflow:auto}
-}
-@media(pointer:coarse) and (orientation:landscape){#top{left:8px;top:4px}#stats{right:6px;top:5px}#gamebar{top:50%;left:5px}#gamebar button{width:38px;height:35px}#joystick{width:104px;height:104px}#stickKnob{width:46px;height:46px;margin:-23px}#touch{bottom:max(8px,env(safe-area-inset-bottom));padding:0 12px}#mobileActions{gap:8px}.mobileAction{width:56px;height:56px}.mobileAction.secondary{width:46px;height:46px}}
+@media(pointer:coarse){#touch{display:flex}#tip{bottom:8px;font-size:10px}#top{top:8px}#gamebar{left:6px;top:42%}#gamebar button{width:44px;height:43px;font-size:18px}#panel{left:57px}}
 
 #authGate{position:fixed;inset:0;z-index:30;background:#04172af2;display:flex;align-items:center;justify-content:center;padding:16px}.authCard{width:min(440px,94vw);background:linear-gradient(145deg,#0b4778,#061a35);border:1px solid #9de7ff;border-radius:20px;padding:22px;box-shadow:0 20px 70px #0008}.authCard h2{margin-top:0;color:#61d5ff}.authCard input{display:block;width:100%;margin:8px 0;padding:12px;border-radius:10px;border:1px solid #8acbe7;background:#f4fbff;color:#123}.authRow{display:flex;gap:8px;flex-wrap:wrap}.authRow button{flex:1;margin-top:8px}.authHint{font-size:12px;opacity:.8;line-height:1.45}.danger{background:#b93848;box-shadow:0 4px 0 #782331}#adminPanel{position:fixed;z-index:25;inset:5%;display:none;overflow:auto;background:#071e35f5;border:2px solid #ffce64;border-radius:18px;padding:18px;color:white;box-shadow:0 20px 80px #000b}#adminPanel h2{color:#ffce64}#adminPanel button{margin:4px}#accountChip{position:fixed;right:12px;bottom:12px;z-index:6;background:#092747e8;border:1px solid #ffffff77;border-radius:12px;padding:8px 10px;font-size:12px;display:none}#accountChip button{padding:6px 9px;font-size:12px;box-shadow:none;margin-left:6px}
 </style>
@@ -66,14 +53,14 @@ button{border:0;border-radius:13px;padding:13px 20px;font-size:16px;font-weight:
 <div id="authGate"><div class="authCard"><h1 style="color:#2ac5ff;margin:0">MAXWORLD</h1><h2 id="authTitle">Створити акаунт</h2><p>Коротка реєстрація для збереження профілю на цьому пристрої.</p><input id="authName" maxlength="24" placeholder="Ім’я гравця" autocomplete="nickname"><input id="authEmail" type="email" placeholder="Електронна пошта" autocomplete="email"><input id="authPassword" type="password" minlength="6" placeholder="Пароль (від 6 символів)" autocomplete="new-password"><div id="developerField" style="display:none"><input id="developerCode" type="password" placeholder="Код доступу розробника"><p class="authHint">Код розробника потрібно налаштувати на сервері Render перед публічним запуском.</p></div><div class="authRow"><button id="registerBtn">Зареєструватися</button><button id="loginBtn" style="background:#177dc0;box-shadow:0 5px 0 #0a4b79">Увійти</button></div><p class="authHint" id="authMessage">Акаунти та ігровий прогрес зберігаються на сервері. Для PostgreSQL налаштуй DATABASE_URL у Render.</p><button id="toggleDeveloper" style="background:#43566a;box-shadow:none;font-size:12px;padding:8px 12px">Вхід розробника</button></div></div>
 <div id="accountChip"><span id="accountName"></span><button id="openAdmin" style="display:none;background:#d69b25">Кабінет розробника</button><button id="logoutBtn" class="danger">Вийти</button></div>
 <div id="adminPanel"><button id="adminClose" class="danger" style="float:right">✕ Закрити</button><h2>🛡️ Кабінет розробника MAXWORLD</h2><p>Панель контролю проєкту та локальної сесії.</p><div id="adminSummary"></div><h3>Керування грою</h3><button id="adminCoins">+100 монет тестовому профілю</button><button id="adminLevel">Підвищити рівень</button><button id="adminReset" class="danger">Скинути локальний прогрес</button><h3>Статус системи</h3><p id="adminSystemStatus"></p><p class="authHint">УВАГА: ця панель є клієнтським прототипом. Не використовуй її як справжню захищену адміністративну систему до підключення серверної авторизації, ролей та PostgreSQL.</p></div>
-<div id="touch"><div id="joystick" aria-label="Віртуальний джойстик"><div id="stickKnob"></div></div><div id="mobileActions"><button class="mobileAction secondary" id="mobileInteract" aria-label="Взаємодія">E</button><button class="mobileAction" data-key="Space" aria-label="Стрибок">⬆</button></div></div>
+<div id="touch"><div class="pad"><button class="up" data-key="ArrowUp">▲</button><button class="left" data-key="ArrowLeft">◀</button><button class="down" data-key="ArrowDown">▼</button><button class="right" data-key="ArrowRight">▶</button></div><button class="jump" data-key="Space">⬆</button></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <script>
 (()=>{
 if(!window.THREE){document.querySelector('.card p').innerHTML='Для 3D-гри потрібен інтернет, щоб завантажити графічну бібліотеку. Перезавантаж сторінку з підключенням до мережі.';return}
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xb7d7ed);scene.fog=new THREE.Fog(0xb7d7ed,260,920);
 const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,1500);
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer: coarse)').matches?1.15:1.65));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=true;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;renderer.useLegacyLights=false;document.body.appendChild(renderer.domElement);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.65));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=true;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;renderer.useLegacyLights=false;document.body.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xeaf5ff,0x59604b,1.7));
 scene.add(new THREE.AmbientLight(0xffffff,.28));
 const sun=new THREE.DirectionalLight(0xfff3df,3.2);sun.position.set(-55,90,38);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-155;sun.shadow.camera.right=155;sun.shadow.camera.top=155;sun.shadow.camera.bottom=-155;sun.shadow.bias=-0.00012;sun.shadow.normalBias=.025;sun.shadow.radius=2;scene.add(sun);sun.shadow.needsUpdate=true;
@@ -208,7 +195,7 @@ function createHouse(){if(houseGroup){scene.remove(houseGroup);scene.remove(inte
 function placeFurniture(type){if(!inHouse){showToast('Спочатку зайди у свій будинок');return false}const ownedIndex=ownedItems.indexOf(type);if(ownedIndex>=0)ownedItems.splice(ownedIndex,1);const spots=[[-2,-1],[0,-1],[2,-1],[-2,1],[0,1],[2,1]];const spot=spots[furniturePlaced.length%spots.length];const item={type,x:spot[0],z:spot[1]};furniturePlaced.push(item);makeFurniture(interiorGroup,type,item.x,item.z);addXP(8);saveGame();showToast(type+' розміщено в будинку');return true}
 if(houseBuilt)createHouse();updateHUD();
 avatar.position.copy(playerPos);avatar.position.y+=moveAmount?Math.abs(Math.sin(walkPhase*2))*.035:Math.sin(now*.002)*.008;
-function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer: coarse)').matches?1.15:1.65))}addEventListener('resize',resize);addEventListener('orientationchange',()=>setTimeout(resize,180));
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}addEventListener('resize',resize);
 addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();if(e.code==='KeyE'&&playing&&!e.repeat)enterExitHouse()});
 addEventListener('keyup',e=>keys[e.code]=false);
 let dragging=false,lastX=0,lastY=0;
@@ -216,17 +203,6 @@ renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse
 renderer.domElement.addEventListener('pointermove',e=>{if(dragging){angle-=(e.clientX-lastX)*.006;camPitch=Math.max(-.1,Math.min(.75,camPitch+(e.clientY-lastY)*.003));lastX=e.clientX;lastY=e.clientY}});
 renderer.domElement.addEventListener('pointerup',()=>dragging=false);
 document.querySelectorAll('[data-key]').forEach(b=>{let k=b.dataset.key;const on=e=>{e.preventDefault();keys[k]=true},off=e=>{e.preventDefault();keys[k]=false};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('pointerleave',off)});
-// Mobile analog movement and swipe-to-look controls
-let stickForward=0,stickSide=0,stickPointer=null;const joy=document.getElementById('joystick'),knob=document.getElementById('stickKnob');
-function updateStick(e){const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.34,len=Math.hypot(dx,dy),scale=len>max?max/len:1;const x=dx*scale,y=dy*scale;knob.style.transform=`translate(${x}px,${y}px)`;stickSide=x/max;stickForward=-y/max;}
-function releaseStick(e){if(stickPointer!==e.pointerId)return;stickPointer=null;stickForward=0;stickSide=0;knob.style.transform='translate(0,0)';}
-joy.addEventListener('pointerdown',e=>{e.preventDefault();stickPointer=e.pointerId;joy.setPointerCapture(e.pointerId);updateStick(e)});joy.addEventListener('pointermove',e=>{if(stickPointer===e.pointerId){e.preventDefault();updateStick(e)}});joy.addEventListener('pointerup',releaseStick);joy.addEventListener('pointercancel',releaseStick);
-document.getElementById('mobileInteract').addEventListener('click',()=>{if(playing)enterExitHouse()});
-let touchLookId=null,touchLookX=0,touchLookY=0;
-renderer.domElement.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'&&playing&&e.clientX>innerWidth*.36&&e.clientY<innerHeight-155){touchLookId=e.pointerId;touchLookX=e.clientX;touchLookY=e.clientY;renderer.domElement.setPointerCapture(e.pointerId)}});
-renderer.domElement.addEventListener('pointermove',e=>{if(touchLookId===e.pointerId){const dx=e.clientX-touchLookX,dy=e.clientY-touchLookY;angle-=dx*.006;camPitch=Math.max(-.1,Math.min(.75,camPitch+dy*.003));touchLookX=e.clientX;touchLookY=e.clientY}});
-const endTouchLook=e=>{if(touchLookId===e.pointerId)touchLookId=null};renderer.domElement.addEventListener('pointerup',endTouchLook);renderer.domElement.addEventListener('pointercancel',endTouchLook);
-
 document.getElementById('play').onclick=()=>{playing=true;document.getElementById('menu').style.display='none'};
 const raycaster=new THREE.Raycaster(),mouseNdc=new THREE.Vector2();let hoveredTraveller=null;
 const playerMenu=document.getElementById('playerMenu');
@@ -245,7 +221,7 @@ document.querySelectorAll('#gamebar [data-panel]').forEach(b=>b.addEventListener
 let previousFrameTime=performance.now();
 function animate(now){requestAnimationFrame(animate);const dt=Math.min(.04,Math.max(.001,(now-previousFrameTime)/1000));previousFrameTime=now;frame++;
 if(playing){
- let f=0,s=0;if(keys.KeyW||keys.ArrowUp)f=1;if(keys.KeyS||keys.ArrowDown)f=-1;if(keys.KeyA||keys.ArrowLeft)s=-1;if(keys.KeyD||keys.ArrowRight)s=1;if(Math.abs(stickForward)>.08)f=Math.max(-1,Math.min(1,f+stickForward));if(Math.abs(stickSide)>.08)s=Math.max(-1,Math.min(1,s+stickSide));
+ let f=0,s=0;if(keys.KeyW||keys.ArrowUp)f=1;if(keys.KeyS||keys.ArrowDown)f=-1;if(keys.KeyA||keys.ArrowLeft)s=-1;if(keys.KeyD||keys.ArrowRight)s=1;
  const dir=new THREE.Vector3(Math.sin(angle),0,Math.cos(angle));const side=new THREE.Vector3(dir.z,0,-dir.x);let move=new THREE.Vector3().addScaledVector(dir,-f).addScaledVector(side,s);moveAmount=move.lengthSq()>0?1:0;
  if(moveAmount){move.normalize();const speed=9.0*(1+upgradeLevel*.24);const moved=moveWithCollision(move,speed*dt);avatar.rotation.y=Math.atan2(move.x,move.z);if(moved)walkPhase+=dt*(speed*1.22);const swing=Math.sin(walkPhase)*.88;avatarParts.leftLeg.rotation.x=swing;avatarParts.rightLeg.rotation.x=-swing;avatarParts.leftArm.rotation.x=-swing*.92;avatarParts.rightArm.rotation.x=swing*.92;}else{for(const k of ['leftLeg','rightLeg','leftArm','rightArm'])avatarParts[k].rotation.x=THREE.MathUtils.damp(avatarParts[k].rotation.x,0,12,dt);}
  if(inHouse){playerPos.x=Math.max(houseX-3.0,Math.min(houseX+3.0,playerPos.x));playerPos.z=Math.max(houseZ-2.4,Math.min(houseZ+2.2,playerPos.z));}else{playerPos.x=Math.max(-218,Math.min(218,playerPos.x));playerPos.z=Math.max(-218,Math.min(218,playerPos.z));}
