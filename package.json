@@ -1,16 +1,56 @@
 {
-  "name": "maxworld-city-online",
-  "version": "2.7.0",
+  "name": "maxworld",
+  "version": "5.1.1",
   "private": true,
-  "description": "MAXWORLD realistic downtown visual pass with smaller characters and optimized rendering",
-  "type": "commonjs",
+  "description": "MAXWORLD 5.1 — PC, Android and browser game",
+  "main": "desktop/main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "desktop": "electron .",
+    "build:win": "electron-builder --win nsis --x64 --ia32",
+    "build:win64": "electron-builder --win nsis --x64",
+    "build:win32": "electron-builder --win nsis --ia32"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=16"
   },
   "dependencies": {
     "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "electron": "22.3.27",
+    "electron-builder": "24.13.3"
+  },
+  "build": {
+    "appId": "ua.maxworld.game",
+    "productName": "MAXWORLD",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "desktop/**/*",
+      "public/**/*",
+      "server.js",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "artifactName": "MAXWORLD-Setup-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }
